@@ -51,4 +51,5 @@ python scripts/analyze.py qwen2.5-coder_3b
 
 ## Author
 
-Aditya Soni, MCA (AI/ML), Lovely Professional University
+Aditya Soni, MCA (AI/ML).
+
