@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+models/
+*.gguf
+data/_*.json
+*.log
+*.err
