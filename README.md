@@ -2,7 +2,7 @@
 
 A small study I did during my MCA (1st semester) on a simple question: if you run a small code model on your own laptop and ask it to write Flask or FastAPI code, how secure is that code, and does adding "write secure code" to the prompt help?
 
-The full write-up is in [report/report.md](report/report.md).
+The full write-up is in [report/report.md](report/report.md), also as a PDF: [report/report.pdf](report/report.pdf).
 
 ## What I did
 
@@ -33,7 +33,7 @@ This is a small study: 5 runs per setting, one person checking the hand review, 
 ```
 scripts/   tasks.py (tasks + prompts), generate.py, scan.py, analyze*.py
 data/      scan results (CSV) and all generated code samples
-report/    report.md and manual-review.md (the 30 hand-reviewed files)
+report/    report.md, report.pdf and manual-review.md (the 30 hand-reviewed files)
 ```
 
 ## Running it
