@@ -1,58 +1,52 @@
-# Security of web code written by small local LLMs
+# llm-code-security
 
-A small study I did during my MCA (1st semester) on a simple question: if you run a small code model on your own laptop and ask it to write Flask or FastAPI code, how secure is that code, and does adding "write secure code" to the prompt help?
+everyone says just add "write secure code" to the prompt. i wanted to see if that actually does anything on small models, the kind you can run on your own laptop. so i tested it, 1st sem MCA.
 
-The full write-up is in [report/report.md](report/report.md), also as a PDF: [report/report.pdf](report/report.pdf).
+the long version is [report/report.md](report/report.md), or the [pdf](report/report.pdf) if you don't want to read it here. the prompts are all in [prompts.md](prompts.md).
 
-## What I did
+## what i did
 
-- Wrote 10 common backend tasks (login, file upload, password reset, fetch a URL, etc.). Each one is a task where a known type of bug can easily appear.
-- Asked two local models to solve each task in 3 ways: a normal prompt, a prompt asking for secure code, and a "you are a security engineer" prompt. 5 runs each, so 150 files per model.
-  - `qwen2.5-coder:3b`
-  - `qwythos-9b` (a community 9B fine-tune, Q4_K_M)
-- Scanned every file with Bandit and Semgrep.
-- Read 30 of the files by hand and marked the real security problems.
+10 backend tasks in flask / fastapi. login, file upload, password reset, ping, fetching a url, stuff like that. each task asked 3 ways:
 
-All the prompts, exactly as they were sent to the models, are in [prompts.md](prompts.md).
+- normal
+- same thing + write secure code
+- "you are a senior backend engineer who specialises in application security..."
 
-Everything ran locally with Ollama on a laptop RTX 4050 (6 GB).
+5 runs each on 2 models, so 300 answers (261 were usable). the models are qwen2.5-coder:3b and qwythos-9b, which is a community 9b finetune. both on ollama with my rtx 4050. it only has 6 gb so the 9b was partly running on cpu.
 
-## What I found
+then i ran bandit and semgrep on everything, and 30 files were checked line by line. AI did the first pass on those and i went through the labels. the tasks and prompts were also drafted with AI help.
 
-1. **The prompt made no visible difference to the scanner results**, for either model.
-2. **The scanners missed the serious problems.** In the 30 files I read, the only serious issues they caught were hardcoded secrets. They missed every logic flaw: users able to read other users' data (IDOR), password reset tokens handed to anyone, SSRF, and file uploads that can write anywhere on disk.
-3. **Read by hand, the secure prompt did fix some of these** (3 flaws fixed in the qwen sample), but it also left SSRF and reset-token bugs in place, even though the prompt names SSRF.
-4. **The secure prompt made the 9B model write about twice as much code**, so 22 of its 50 answers got cut off at the output limit. That makes its secure results less reliable, and I've reported it in the write-up rather than hidden it.
+## what came out
 
-So counting scanner warnings is not a good way to judge whether a prompt makes AI code safer.
+total warnings: pretty much the same for every prompt, both models.
 
-## Limits
+the 30 files were more interesting. 12 of them had a serious bug. scanners caught 5 (four hardcoded keys and one ssrf) and missed 7. one of the missed ones is a profile page that checks you're logged in but never checks if it's *your* profile. another one sends the password reset token back to whoever asked for it.
 
-This is a small study: 5 runs per setting, one person checking the hand review, and the code was read, not executed. The details are in section 6 of the report.
+did the secure prompt help? in the qwen files it fixed 3 bugs and added 2 new hardcoded keys. so 6 bad files out of 10 became 5 out of 10, i can't call that better.
 
-## Repo layout
+my favourite is a file that has `SECRET_KEY = "your_secret_key_here"` and right next to it the comment says never hardcode secrets in production.
 
-```
-prompts.md the 30 prompts and the settings used
-scripts/   tasks.py (tasks + prompts), generate.py, scan.py, analyze*.py
-data/      scan results (CSV) and all generated code samples
-report/    report.md, report.pdf and manual-review.md (the 30 hand-reviewed files)
-```
+also with the secure prompt the 9b wrote around 2x more code and 22 of its 50 answers got cut off in the middle.
 
-## Running it
+## where i messed up
 
-Needs Python 3.12 and [Ollama](https://ollama.com) with the model pulled.
+semgrep never ran on the second batch. the command was failing, my script didn't check, and it just reused the old result file. so some numbers in the first versions of the report were wrong. i scanned again and fixed them in v3, all the corrections are written at the end of the report. the semgrep column in `data/results_qwythos-9b.csv` is still the old wrong one though, the right numbers are in `data/semgrep_rescan.csv`.
+
+the script that pulls the code out of the answer also grabbed the wrong part in 3 files.
+
+and it's a small test. 5 runs each, the code was read and not run, nobody else checked the review.
+
+## running it
+
+python 3.12 and [ollama](https://ollama.com). windows, the venv has to be called `.venv` because `scan.py` looks for bandit there.
 
 ```
 pip install -r requirements.txt
+ollama pull qwen2.5-coder:3b
 python scripts/generate.py qwen2.5-coder:3b 5
-python scripts/scan.py qwen2.5-coder_3b
 python scripts/analyze.py qwen2.5-coder_3b
 ```
 
-`generate.py` skips files that already exist, so it can be stopped and started again.
+generate takes a while but it skips what's already done, so you can stop it. the samples and results are already in `data/`, so `analyze.py` works without generating anything. `scan.py` is the one with the semgrep problem, run semgrep yourself if you want to rescan.
 
-## Author
-
-Aditya Soni, MCA (AI/ML).
-
+Aditya Soni
