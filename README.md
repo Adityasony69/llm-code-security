@@ -13,6 +13,8 @@ The full write-up is in [report/report.md](report/report.md), also as a PDF: [re
 - Scanned every file with Bandit and Semgrep.
 - Read 30 of the files by hand and marked the real security problems.
 
+All the prompts, exactly as they were sent to the models, are in [prompts.md](prompts.md).
+
 Everything ran locally with Ollama on a laptop RTX 4050 (6 GB).
 
 ## What I found
@@ -31,6 +33,7 @@ This is a small study: 5 runs per setting, one person checking the hand review, 
 ## Repo layout
 
 ```
+prompts.md the 30 prompts and the settings used
 scripts/   tasks.py (tasks + prompts), generate.py, scan.py, analyze*.py
 data/      scan results (CSV) and all generated code samples
 report/    report.md, report.pdf and manual-review.md (the 30 hand-reviewed files)
